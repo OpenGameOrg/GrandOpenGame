@@ -1,10 +1,18 @@
 package com.grandopengame.engine.core;
 
+import com.grandopengame.engine.core.graphics.model.Model;
+import com.grandopengame.engine.core.render.LegacyGLRenderer;
+import com.grandopengame.engine.core.render.Renderer;
+import com.grandopengame.engine.core.render.Scene;
+import lombok.Setter;
+import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
@@ -16,12 +24,17 @@ import static org.lwjgl.system.MemoryUtil.NULL;
 /**
  * Main lwjgl loop is here
  */
-@Log4j2
+@Log
 public class MainLoop {
     private long windowHandle;
+    @Setter
+    private Scene scene;
+    private Renderer renderer;
 
     public void run() {
         log.info("Running main game loop");
+
+        renderer = new LegacyGLRenderer();
 
         init();
         loop();
@@ -94,9 +107,16 @@ public class MainLoop {
 
         // Set the clear color
         glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
-
         while (!glfwWindowShouldClose(windowHandle)) {
             glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            // render scene
+            if (scene != null) {
+                glColor3f(1.0f, 1.0f, 1.0f);
+                scene.getModels().parallelStream().forEach((model) -> renderer.render(model));
+
+                log.info("DRAW MODEL");
+            }
+            //
             glfwSwapBuffers(windowHandle);
             glfwPollEvents();
         }
