@@ -13,6 +13,9 @@
 # Idea files
 .idea/
 
+# Target folder
+target/
+
 # Package Files #
 *.jar
 *.war
