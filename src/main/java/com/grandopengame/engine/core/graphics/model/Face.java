@@ -6,7 +6,7 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 @Getter
 public class Face {
-    private final int[] vertices;
+    private final short[] vertices;
     private final int[] textureCoordinates;
     private final int[] normals;
 }

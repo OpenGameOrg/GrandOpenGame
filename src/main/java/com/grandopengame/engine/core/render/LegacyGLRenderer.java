@@ -1,47 +1,61 @@
 package com.grandopengame.engine.core.render;
 
 import com.grandopengame.engine.core.graphics.model.Face;
-import com.grandopengame.engine.core.graphics.model.Model;
+import com.grandopengame.engine.core.objects.SceneObject;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 
 import static org.lwjgl.opengl.GL11.*;
 
 public class LegacyGLRenderer implements Renderer {
     @Override
-    public void render(Model model) {
-        glMaterialf(GL_FRONT, GL_SHININESS, 120);
-        glBegin(GL_TRIANGLES);
-        {
-            for (Face face : model.getFaces()) {
-                Vector3f[] normals = {
-                        model.getNormals().get(face.getNormals()[0] - 1),
-                        model.getNormals().get(face.getNormals()[1] - 1),
-                        model.getNormals().get(face.getNormals()[2] - 1)
-                };
-                Vector2f[] texCoords = {
-                        model.getUv().get(face.getTextureCoordinates()[0] - 1),
-                        model.getUv().get(face.getTextureCoordinates()[1] - 1),
-                        model.getUv().get(face.getTextureCoordinates()[2] - 1)
-                };
-                Vector3f[] vertices = {
-                        model.getVertices().get(face.getVertices()[0] - 1),
-                        model.getVertices().get(face.getVertices()[1] - 1),
-                        model.getVertices().get(face.getVertices()[2] - 1)
-                };
-                {
-                    glNormal3f(normals[0].x(), normals[0].y(), normals[0].z());
-                    glTexCoord2f(texCoords[0].x(), texCoords[0].y());
-                    glVertex3f(vertices[0].x(), vertices[0].y(), vertices[0].z());
-                    glNormal3f(normals[1].x(), normals[1].y(), normals[1].z());
-                    glTexCoord2f(texCoords[1].x(), texCoords[1].y());
-                    glVertex3f(vertices[1].x(), vertices[1].y(), vertices[1].z());
-                    glNormal3f(normals[2].x(), normals[2].y(), normals[2].z());
-                    glTexCoord2f(texCoords[2].x(), texCoords[2].y());
-                    glVertex3f(vertices[2].x(), vertices[2].y(), vertices[2].z());
-                }
-            }
+    public void render(SceneObject object) {
+        var model = object.getModel();
+        glPushMatrix();
+        glTranslatef(object.position.x, object.position.y, object.position.z);
+        glRotatef(object.rotation.x, 1.0f, 0, 0);
+        glRotatef(object.rotation.y, 0, 1.0f, 0);
+        glRotatef(object.rotation.z, 0, 0, 1.0f);
+        glScalef(object.scale.x, object.scale.y, object.scale.z);
+
+        var indexBuffer = BufferUtils.createShortBuffer(model.getFaces().size() * 3);
+
+        for (Face face : model.getFaces()) {
+            Vector3f[] normals = {
+                    model.getNormals().get(face.getNormals()[0] - 1),
+                    model.getNormals().get(face.getNormals()[1] - 1),
+                    model.getNormals().get(face.getNormals()[2] - 1)
+            };
+            Vector2f[] texCoords = {
+                    model.getUv().get(face.getTextureCoordinates()[0] - 1),
+                    model.getUv().get(face.getTextureCoordinates()[1] - 1),
+                    model.getUv().get(face.getTextureCoordinates()[2] - 1)
+            };
+
+            indexBuffer.put(face.getVertices()[0]);
+            indexBuffer.put(face.getVertices()[1]);
+            indexBuffer.put(face.getVertices()[2]);
         }
-        glEnd();
+
+        var bufferVerts = BufferUtils.createFloatBuffer(model.getVertices().size() * 3);
+        model.getVertices().forEach((vert) -> {
+            bufferVerts.put(vert.x);
+            bufferVerts.put(vert.y);
+            bufferVerts.put(vert.z);
+        });
+
+        bufferVerts.flip();
+        indexBuffer.flip();
+
+        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, bufferVerts, GL15.GL_STATIC_DRAW);
+        GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexBuffer, GL15.GL_STATIC_DRAW);
+        GL20.glEnableVertexAttribArray(0);
+        GL20.glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
+        glDrawElements(GL_TRIANGLES, model.getFaces().size() * 3, GL_UNSIGNED_SHORT, 0);
+
+        glPopMatrix();
     }
 }

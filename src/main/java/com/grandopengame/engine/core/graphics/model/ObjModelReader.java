@@ -27,7 +27,7 @@ public class ObjModelReader implements ModelReader {
                 continue;
             }
             var components = line.split(" ");
-            switch (line) {
+            switch (components[0]) {
                 case "v":
                     vertices.add(new Vector3f(
                             Float.parseFloat(components[1]),
@@ -43,10 +43,10 @@ public class ObjModelReader implements ModelReader {
                     );
                     break;
                 case "f":
-                    var faceVerts = new int[] {
-                            Integer.parseInt(components[1].split("/")[0]),
-                            Integer.parseInt(components[2].split("/")[0]),
-                            Integer.parseInt(components[3].split("/")[0]),
+                    var faceVerts = new short[] {
+                            Short.parseShort(components[1].split("/")[0]),
+                            Short.parseShort(components[2].split("/")[0]),
+                            Short.parseShort(components[3].split("/")[0]),
                     };
                     var faceTexture = new int[] {
                             Integer.parseInt(components[1].split("/")[1]),

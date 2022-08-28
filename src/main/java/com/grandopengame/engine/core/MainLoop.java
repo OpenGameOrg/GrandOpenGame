@@ -1,23 +1,30 @@
 package com.grandopengame.engine.core;
 
-import com.grandopengame.engine.core.graphics.model.Model;
 import com.grandopengame.engine.core.render.LegacyGLRenderer;
 import com.grandopengame.engine.core.render.Renderer;
 import com.grandopengame.engine.core.render.Scene;
 import lombok.Setter;
 import lombok.extern.java.Log;
-import lombok.extern.log4j.Log4j2;
+import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.Objects;
 
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
+import static org.lwjgl.opengl.GL15.*;
+import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL30.glBindVertexArray;
+import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -31,8 +38,12 @@ public class MainLoop {
     private Scene scene;
     private Renderer renderer;
 
-    public void run() {
-        log.info("Running main game loop");
+    private long startTime;
+
+    public void run() throws IOException {
+        log.info("Initialising main game loop");
+
+        startTime = System.currentTimeMillis();
 
         renderer = new LegacyGLRenderer();
 
@@ -102,23 +113,67 @@ public class MainLoop {
         glfwShowWindow(windowHandle);
     }
 
-    private void loop() {
+    private void loop() throws IOException {
         GL.createCapabilities();
 
-        // Set the clear color
-        glClearColor(1.0f, 0.0f, 0.0f, 0.0f);
+        int shader = createShader();
+
+        int vertexArrayObject = glGenVertexArrays();
+        int arrayBuffer = glGenBuffers();
+        int indexBuffer = glGenBuffers();
+        glBindVertexArray(vertexArrayObject);
+        glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+
+        log.info("Main loop initialised in " + (System.currentTimeMillis() - startTime) + "ms");
         while (!glfwWindowShouldClose(windowHandle)) {
-            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT);
             // render scene
             if (scene != null) {
                 glColor3f(1.0f, 1.0f, 1.0f);
-                scene.getModels().parallelStream().forEach((model) -> renderer.render(model));
-
-                log.info("DRAW MODEL");
+                scene.getObjects().parallelStream().forEach((sceneObject) -> renderer.render(sceneObject));
             }
             //
             glfwSwapBuffers(windowHandle);
             glfwPollEvents();
         }
+    }
+
+    private int createShader() throws IOException {
+        int program = GL20.glCreateProgram();
+
+        var vertexShader = compileShader(GL_VERTEX_SHADER, "shaders/simple.vert");
+        var fragmentShader = compileShader(GL_FRAGMENT_SHADER, "shaders/simple.frag");
+
+        glAttachShader(program, vertexShader);
+        glAttachShader(program, fragmentShader);
+        glLinkProgram(program);
+        glValidateProgram(program);
+
+        glDeleteShader(vertexShader);
+        glDeleteShader(fragmentShader);
+
+        glUseProgram(program);
+
+        return vertexShader;
+    }
+
+    private int compileShader(int shaderType, String sourcePath) throws IOException {
+        int shader = GL20.glCreateShader(shaderType);
+        var shaderSource = Files.readString(Path.of(sourcePath));
+        GL20.glShaderSource(shader, shaderSource);
+        GL20.glCompileShader(shader);
+
+        var buffer = BufferUtils.createIntBuffer(1);
+        glGetShaderiv(shader, GL_COMPILE_STATUS, buffer);
+
+        if (buffer.get(0) == GL_FALSE) {
+            var error = glGetShaderInfoLog(shader);
+            log.severe(String.format("Can't compile %s shader, reason: %s", sourcePath, error));
+            glDeleteShader(shader);
+            return 0;
+        }
+
+        return shader;
     }
 }

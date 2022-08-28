@@ -1,6 +1,7 @@
 package com.grandopengame.engine.core.render;
 
 import com.grandopengame.engine.core.graphics.model.Model;
+import com.grandopengame.engine.core.objects.SceneObject;
 import lombok.Getter;
 
 import java.util.ArrayList;
@@ -11,9 +12,9 @@ import java.util.List;
  */
 public class Scene {
     @Getter
-    private List<Model> models = new ArrayList<>();
+    private List<SceneObject> objects = new ArrayList<>();
 
-    public void addModel(Model model) {
-        models.add(model);
+    public void addObject(SceneObject object) {
+        objects.add(object);
     }
 }
