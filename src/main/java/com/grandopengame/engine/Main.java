@@ -3,6 +3,7 @@ package com.grandopengame.engine;
 import com.grandopengame.engine.core.MainLoop;
 import com.grandopengame.engine.core.graphics.model.ModelReaderFactory;
 import com.grandopengame.engine.core.objects.SceneObject;
+import com.grandopengame.engine.core.render.OpenGlRenderer;
 import com.grandopengame.engine.core.render.Scene;
 import lombok.extern.java.Log;
 import org.joml.Vector3f;
@@ -18,20 +19,14 @@ public class Main {
         var scene = new Scene();
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
         var modelStream = classloader.getResourceAsStream("models/cube.obj");
+        OpenGlRenderer renderer = OpenGlRenderer.getInstance();
         var model = ModelReaderFactory.getReader("obj").read(modelStream);
-        var object = new SceneObject(model, new Vector3f(), new Vector3f(), new Vector3f(0.5f, 0.5f, 0.5f));
-        new Thread(() -> {
-            for (int i = 0; i < 50000; i++) {
-                try {
-                    Thread.sleep(5);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                object.rotation.x -= 0.05f;
-                object.rotation.y -= 0.04f;
-            }
-        }).start();
-        scene.addObject(object);
+        for (int i = 0; i < 250; i++) {
+            var object = new SceneObject(model, new Vector3f(), new Vector3f(), new Vector3f(0.5f, 0.5f, 0.5f));
+            scene.addObject(object);
+        }
+
+        log.info("Scene stats: " + scene.getStats());
 
         log.info("Test model loaded in " + (System.currentTimeMillis() - startTimeMillis) + "ms");
 

@@ -1,6 +1,6 @@
 package com.grandopengame.engine.core;
 
-import com.grandopengame.engine.core.render.LegacyGLRenderer;
+import com.grandopengame.engine.core.render.OpenGlRenderer;
 import com.grandopengame.engine.core.render.Renderer;
 import com.grandopengame.engine.core.render.Scene;
 import lombok.Setter;
@@ -9,8 +9,6 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
 import org.lwjgl.opengl.GL;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 
 import java.io.IOException;
@@ -39,13 +37,14 @@ public class MainLoop {
     private Renderer renderer;
 
     private long startTime;
+    private int currentFrame;
 
     public void run() throws IOException {
         log.info("Initialising main game loop");
 
         startTime = System.currentTimeMillis();
 
-        renderer = new LegacyGLRenderer();
+        renderer = OpenGlRenderer.getInstance();
 
         init();
         loop();
@@ -72,6 +71,9 @@ public class MainLoop {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
+//        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+//        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         // Create the window
         windowHandle = glfwCreateWindow(600, 600, "GrandOpenGame", NULL, NULL);
@@ -116,30 +118,55 @@ public class MainLoop {
     private void loop() throws IOException {
         GL.createCapabilities();
 
-        int shader = createShader();
+        int error = glGetError();
+        glfwSetErrorCallback((ret, args) -> {
+            log.severe("GLFW ERROR: " + ret);
+        });
 
-        int vertexArrayObject = glGenVertexArrays();
-        int arrayBuffer = glGenBuffers();
-        int indexBuffer = glGenBuffers();
-        glBindVertexArray(vertexArrayObject);
-        glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
+        renderer.registerModel(scene.getObjects().get(0).getModel());
+
+        int program = createShaderProgram();
+
+        int location = glGetUniformLocation(program, "u_Color");
+        assert (location != -1);
+        glUniform4f(location, 0.9f, 0.3f, 0.8f, 1.0f);
+
+        int someError = glGetError();
 
         log.info("Main loop initialised in " + (System.currentTimeMillis() - startTime) + "ms");
+        startTime = System.currentTimeMillis();
+        float r = 0.0f;
+        float increment = 0.05f;
         while (!glfwWindowShouldClose(windowHandle)) {
+            if (System.currentTimeMillis() - startTime > 1000) {
+                startTime = System.currentTimeMillis();
+                log.info("Current fps: " + currentFrame);
+                currentFrame = 0;
+            }
+
             glClear(GL_COLOR_BUFFER_BIT);
             // render scene
             if (scene != null) {
-                glColor3f(1.0f, 1.0f, 1.0f);
-                scene.getObjects().parallelStream().forEach((sceneObject) -> renderer.render(sceneObject));
+                glUniform4f(location, r, 0.3f, 0.8f, 1.0f);
+
+                if (r > 1.0f)
+                    increment = -0.05f;
+                else if (r < 0.0f)
+                    increment = 0.05f;
+
+                r+= increment;
+
+                scene.getObjects().stream().forEach((sceneObject) -> renderer.render(sceneObject));
             }
             //
             glfwSwapBuffers(windowHandle);
             glfwPollEvents();
+
+            currentFrame++;
         }
     }
 
-    private int createShader() throws IOException {
+    private int createShaderProgram() throws IOException {
         int program = GL20.glCreateProgram();
 
         var vertexShader = compileShader(GL_VERTEX_SHADER, "shaders/simple.vert");
@@ -155,7 +182,7 @@ public class MainLoop {
 
         glUseProgram(program);
 
-        return vertexShader;
+        return program;
     }
 
     private int compileShader(int shaderType, String sourcePath) throws IOException {

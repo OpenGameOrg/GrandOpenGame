@@ -13,6 +13,8 @@ import java.util.Scanner;
  * Read .obj wavefront model
  */
 public class ObjModelReader implements ModelReader {
+    private static int indexCounter = 0;
+
     @Override
     public Model read(InputStream stream) {
         var scanner = new Scanner(stream);
@@ -71,6 +73,7 @@ public class ObjModelReader implements ModelReader {
             }
         }
         return Model.builder()
+                .id(indexCounter++)
                 .vertices(vertices)
                 .normals(normals)
                 .faces(faces)

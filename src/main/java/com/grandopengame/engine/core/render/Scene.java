@@ -17,4 +17,11 @@ public class Scene {
     public void addObject(SceneObject object) {
         objects.add(object);
     }
+
+    public String getStats() {
+        var vertices = objects.stream().mapToInt((object) -> object.getModel().getVertices().size()).sum();
+        var faces = objects.stream().mapToInt((object) -> object.getModel().getFaces().size()).sum();
+
+        return String.format("(faces: %s, vertices: %s, objects: %s)", faces, vertices, objects.size());
+    }
 }

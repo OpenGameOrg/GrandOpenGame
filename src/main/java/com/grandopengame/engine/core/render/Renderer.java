@@ -8,4 +8,6 @@ import com.grandopengame.engine.core.objects.SceneObject;
  */
 public interface Renderer {
     void render(SceneObject object);
+
+    void registerModel(Model model);
 }
