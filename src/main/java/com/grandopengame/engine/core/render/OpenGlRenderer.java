@@ -70,14 +70,11 @@ public class OpenGlRenderer implements Renderer {
         bufferVerts.flip();
         indexBufferData.flip();
 
-        int arrayBuffer = glGenBuffers();
+        arrayBuffer = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
         glBufferData(GL_ARRAY_BUFFER, bufferVerts, GL_STATIC_DRAW);
 
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
-
-        int indexBuffer = glGenBuffers();
+        indexBuffer = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferData, GL_STATIC_DRAW);
     }
@@ -88,6 +85,12 @@ public class OpenGlRenderer implements Renderer {
     @Override
     public void render(SceneObject object) {
         var model = object.getModel();
+
+        glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
+
+        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
 
         glDrawElements(GL_TRIANGLES, object.getModel().getFaces().size() * 3, GL_UNSIGNED_SHORT, 0);
     }
