@@ -20,7 +20,7 @@ public class Scene {
 
     public String getStats() {
         var vertices = objects.stream().mapToInt((object) -> object.getModel().getVertices().size()).sum();
-        var faces = objects.stream().mapToInt((object) -> object.getModel().getFaces().size()).sum();
+        var faces = objects.stream().mapToInt((object) -> object.getModel().getIndices().size() / 3).sum();
 
         return String.format("(faces: %s, vertices: %s, objects: %s)", faces, vertices, objects.size());
     }

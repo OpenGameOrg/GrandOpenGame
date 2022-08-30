@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
+import org.joml.Vector3i;
 
 import java.util.ArrayList;
 
@@ -16,6 +17,6 @@ public class Model {
     private long id;
     private ArrayList<Vector3f> vertices;
     private ArrayList<Vector3f> normals;
-    private ArrayList<Vector2f> uv;
-    private ArrayList<Face> faces;
+    private Vector2f[] uv;
+    private ArrayList<Short> indices;
 }

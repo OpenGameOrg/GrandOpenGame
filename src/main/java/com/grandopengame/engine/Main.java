@@ -2,6 +2,7 @@ package com.grandopengame.engine;
 
 import com.grandopengame.engine.core.MainLoop;
 import com.grandopengame.engine.core.graphics.model.ModelReaderFactory;
+import com.grandopengame.engine.core.graphics.model.Texture;
 import com.grandopengame.engine.core.objects.SceneObject;
 import com.grandopengame.engine.core.render.OpenGlRenderer;
 import com.grandopengame.engine.core.render.Scene;
@@ -21,7 +22,7 @@ public class Main {
         var modelStream = classloader.getResourceAsStream("models/cube.obj");
         OpenGlRenderer renderer = OpenGlRenderer.getInstance();
         var model = ModelReaderFactory.getReader("obj").read(modelStream);
-        for (int i = 0; i < 250; i++) {
+        for (int i = 0; i < 260; i++) {
             var object = new SceneObject(model, new Vector3f(), new Vector3f(), new Vector3f(0.5f, 0.5f, 0.5f));
             scene.addObject(object);
         }

@@ -1,5 +1,6 @@
 package com.grandopengame.engine.core;
 
+import com.grandopengame.engine.core.graphics.model.Texture;
 import com.grandopengame.engine.core.render.OpenGlRenderer;
 import com.grandopengame.engine.core.render.Renderer;
 import com.grandopengame.engine.core.render.Scene;
@@ -19,9 +20,7 @@ import java.util.Objects;
 import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
-import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -71,9 +70,9 @@ public class MainLoop {
         glfwDefaultWindowHints();
         glfwWindowHint(GLFW_VISIBLE, GLFW_FALSE);
         glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
-//        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
-//        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
-//        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+        glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+        glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         // Create the window
         windowHandle = glfwCreateWindow(600, 600, "GrandOpenGame", NULL, NULL);
@@ -123,13 +122,18 @@ public class MainLoop {
             log.severe("GLFW ERROR: " + ret);
         });
 
-        renderer.registerModel(scene.getObjects().get(0).getModel());
+        renderer.loadModel(scene.getObjects().get(0).getModel());
+        var texture = Texture.loadFrom("textures/texture.jpg");
+        renderer.loadTexture(texture);
 
         int program = createShaderProgram();
 
-        int location = glGetUniformLocation(program, "u_Color");
-        assert (location != -1);
-        glUniform4f(location, 0.9f, 0.3f, 0.8f, 1.0f);
+        int colorLocation = glGetUniformLocation(program, "u_Color");
+        int texSlotLocation = glGetUniformLocation(program, "u_Texture");
+        assert (texSlotLocation != -1);
+        assert (colorLocation != -1);
+        glUniform4f(colorLocation, 0.9f, 0.3f, 0.8f, 1.0f);
+        glUniform1i(texSlotLocation, 0);
 
         int someError = glGetError();
 
@@ -147,7 +151,8 @@ public class MainLoop {
             glClear(GL_COLOR_BUFFER_BIT);
             // render scene
             if (scene != null) {
-                glUniform4f(location, r, 0.3f, 0.8f, 1.0f);
+                glUniform4f(colorLocation, r, 0.3f, 0.8f, 1.0f);
+                glUniform1i(texSlotLocation, 0);
 
                 if (r > 1.0f)
                     increment = -0.05f;

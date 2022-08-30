@@ -2,6 +2,7 @@ package com.grandopengame.engine.core.render;
 
 import com.grandopengame.engine.core.graphics.model.Face;
 import com.grandopengame.engine.core.graphics.model.Model;
+import com.grandopengame.engine.core.graphics.model.Texture;
 import com.grandopengame.engine.core.objects.SceneObject;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
@@ -16,8 +17,7 @@ import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL15.*;
 import static org.lwjgl.opengl.GL20.glEnableVertexAttribArray;
 import static org.lwjgl.opengl.GL20.glVertexAttribPointer;
-import static org.lwjgl.opengl.GL30.glBindVertexArray;
-import static org.lwjgl.opengl.GL30.glGenVertexArrays;
+import static org.lwjgl.opengl.GL30.*;
 
 public class OpenGlRenderer implements Renderer {
     private static OpenGlRenderer instance;
@@ -40,43 +40,61 @@ public class OpenGlRenderer implements Renderer {
     }
 
     @Override
-    public void registerModel(Model model) {
-        var indexBufferData = BufferUtils.createShortBuffer(model.getFaces().size() * 3);
+    public void loadModel(Model model) {
+        var indexBufferData = BufferUtils.createShortBuffer(model.getIndices().size());
 
-        for (Face face : model.getFaces()) {
-            Vector3f[] normals = {
-                    model.getNormals().get(face.getNormals()[0] - 1),
-                    model.getNormals().get(face.getNormals()[1] - 1),
-                    model.getNormals().get(face.getNormals()[2] - 1)
-            };
-            Vector2f[] texCoords = {
-                    model.getUv().get(face.getTextureCoordinates()[0] - 1),
-                    model.getUv().get(face.getTextureCoordinates()[1] - 1),
-                    model.getUv().get(face.getTextureCoordinates()[2] - 1)
-            };
+        model.getIndices().forEach(indexBufferData::put);
 
-            indexBufferData.put(face.getVertices()[0]);
-            indexBufferData.put(face.getVertices()[1]);
-            indexBufferData.put(face.getVertices()[2]);
-        }
-
-        var bufferVerts = BufferUtils.createFloatBuffer(model.getVertices().size() * 3);
-        model.getVertices().forEach((vert) -> {
+        var bufferVerts = BufferUtils.createFloatBuffer(model.getVertices().size() * 5);
+        for (int i = 0; i < model.getVertices().size(); i++) {
+            var vert = model.getVertices().get(i);
+            var texCoord = model.getUv()[i];
             bufferVerts.put(vert.x);
             bufferVerts.put(vert.y);
             bufferVerts.put(vert.z);
-        });
+            bufferVerts.put(texCoord.x);
+            bufferVerts.put(texCoord.y);
+        }
 
         bufferVerts.flip();
         indexBufferData.flip();
 
+        var vao = glGenVertexArrays();
+        glBindVertexArray(vao);
+
         arrayBuffer = glGenBuffers();
         glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
+        glEnableVertexAttribArray(0);
+        glVertexAttribPointer(0, 3, GL_FLOAT, false, 5 * Float.BYTES, 0);
+        glEnableVertexAttribArray(1);
+        glVertexAttribPointer(1, 2, GL_FLOAT, false, 5 * Float.BYTES, 3 * Float.BYTES);
         glBufferData(GL_ARRAY_BUFFER, bufferVerts, GL_STATIC_DRAW);
 
         indexBuffer = glGenBuffers();
         glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
         glBufferData(GL_ELEMENT_ARRAY_BUFFER, indexBufferData, GL_STATIC_DRAW);
+
+        modelIdVaoObject.put(model.getId(), vao);
+    }
+
+    @Override
+    public Texture loadTexture(Texture texture) {
+        var textureId = glGenTextures();
+        glActiveTexture(GL_TEXTURE0);
+        glBindTexture(GL_TEXTURE_2D, textureId);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, texture.getWidth(),
+                texture.getHeight(), 0, GL_RGBA, GL_UNSIGNED_BYTE, texture.getBuffer());
+
+        texture.setLoaded(true);
+        texture.setRendererId(textureId);
+
+        return texture;
     }
 
     private int indexBuffer;
@@ -86,12 +104,9 @@ public class OpenGlRenderer implements Renderer {
     public void render(SceneObject object) {
         var model = object.getModel();
 
-        glBindBuffer(GL_ARRAY_BUFFER, arrayBuffer);
-        glEnableVertexAttribArray(0);
-        glVertexAttribPointer(0, 3, GL_FLOAT, false, 3 * 4, 0);
+        glBindVertexArray(modelIdVaoObject.get(model.getId()));
+        //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
 
-        glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
-
-        glDrawElements(GL_TRIANGLES, object.getModel().getFaces().size() * 3, GL_UNSIGNED_SHORT, 0);
+        glDrawElements(GL_TRIANGLES, object.getModel().getIndices().size() * 3, GL_UNSIGNED_SHORT, 0);
     }
 }
