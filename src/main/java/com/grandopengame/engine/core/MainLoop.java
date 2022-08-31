@@ -1,11 +1,13 @@
 package com.grandopengame.engine.core;
 
 import com.grandopengame.engine.core.graphics.model.Texture;
+import com.grandopengame.engine.core.render.Camera;
 import com.grandopengame.engine.core.render.OpenGlRenderer;
 import com.grandopengame.engine.core.render.Renderer;
 import com.grandopengame.engine.core.render.Scene;
 import lombok.Setter;
 import lombok.extern.java.Log;
+import org.joml.Matrix4f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -21,6 +23,7 @@ import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
+import static org.lwjgl.opengl.GL21.glUniformMatrix4x2fv;
 import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
@@ -85,6 +88,8 @@ public class MainLoop {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 glfwSetWindowShouldClose(window, true);
             }
+            if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+            }
         });
 
         // Get the thread stack and push a new frame
@@ -117,6 +122,9 @@ public class MainLoop {
     private void loop() throws IOException {
         GL.createCapabilities();
 
+        glEnable(GL_DEPTH_TEST);
+        glEnable(GL_CULL_FACE);
+
         int error = glGetError();
         glfwSetErrorCallback((ret, args) -> {
             log.severe("GLFW ERROR: " + ret);
@@ -127,13 +135,9 @@ public class MainLoop {
         renderer.loadTexture(texture);
 
         int program = createShaderProgram();
+        renderer.initUniforms(program);
 
-        int colorLocation = glGetUniformLocation(program, "u_Color");
-        int texSlotLocation = glGetUniformLocation(program, "u_Texture");
-        assert (texSlotLocation != -1);
-        assert (colorLocation != -1);
-        glUniform4f(colorLocation, 0.9f, 0.3f, 0.8f, 1.0f);
-        glUniform1i(texSlotLocation, 0);
+        var camera = Camera.getDefaultCamera();
 
         int someError = glGetError();
 
@@ -148,20 +152,20 @@ public class MainLoop {
                 currentFrame = 0;
             }
 
-            glClear(GL_COLOR_BUFFER_BIT);
+            glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
             // render scene
             if (scene != null) {
-                glUniform4f(colorLocation, r, 0.3f, 0.8f, 1.0f);
-                glUniform1i(texSlotLocation, 0);
-
                 if (r > 1.0f)
                     increment = -0.05f;
                 else if (r < 0.0f)
                     increment = 0.05f;
 
                 r+= increment;
+                //scene.getObjects().get(0).position.x += 0.001f;
+                scene.getObjects().get(0).position.z = -5.810f;
+                scene.getObjects().get(0).rotation.y += 0.001f;
 
-                scene.getObjects().stream().forEach((sceneObject) -> renderer.render(sceneObject));
+                scene.getObjects().stream().forEach((sceneObject) -> renderer.render(sceneObject, camera));
             }
             //
             glfwSwapBuffers(windowHandle);

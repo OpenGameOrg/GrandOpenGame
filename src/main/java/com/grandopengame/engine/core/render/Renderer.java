@@ -8,9 +8,11 @@ import com.grandopengame.engine.core.objects.SceneObject;
  * Render stuff
  */
 public interface Renderer {
-    void render(SceneObject object);
+    void render(SceneObject object, Camera camera);
 
     void loadModel(Model model);
 
     Texture loadTexture(Texture texture);
+
+    void initUniforms(int program);
 }

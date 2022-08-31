@@ -4,12 +4,14 @@ import com.grandopengame.engine.core.graphics.model.Face;
 import com.grandopengame.engine.core.graphics.model.Model;
 import com.grandopengame.engine.core.graphics.model.Texture;
 import com.grandopengame.engine.core.objects.SceneObject;
+import org.joml.Matrix4f;
 import org.joml.Vector2f;
 import org.joml.Vector3f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 
+import java.nio.FloatBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +25,11 @@ public class OpenGlRenderer implements Renderer {
     private static OpenGlRenderer instance;
     private Map<Long, Integer> modelIdVaoObject;
     private Map<Long, Integer> modelIndexBuffer;
+
+    private final FloatBuffer projBuff = BufferUtils.createFloatBuffer(16);
+    private int texSlotLocation;
+    private int mvpLocation;
+    private int colorLocation;
 
     public static OpenGlRenderer getInstance() {
         if (instance == null) {
@@ -97,12 +104,31 @@ public class OpenGlRenderer implements Renderer {
         return texture;
     }
 
+    @Override
+    public void initUniforms(int program) {
+        mvpLocation = glGetUniformLocation(program, "u_MVP");
+        colorLocation = glGetUniformLocation(program, "u_Color");
+        texSlotLocation = glGetUniformLocation(program, "u_Texture");
+        assert (texSlotLocation != -1);
+        assert (colorLocation != -1);
+        assert (mvpLocation != -1);
+        glUniform4f(colorLocation, 0.9f, 0.3f, 0.8f, 1.0f);
+        glUniform1i(texSlotLocation, 0);
+    }
+
     private int indexBuffer;
     private int arrayBuffer;
 
     @Override
-    public void render(SceneObject object) {
+    public void render(SceneObject object, Camera camera) {
         var model = object.getModel();
+        var mvp = new Matrix4f();
+        mvp.perspective(1.0f, 1f, 0.01f, 200.0f)
+                .translate(object.position.x, object.position.y, object.position.z)
+                .rotateXYZ(object.rotation).translate(camera.getPosition()).rotateXYZ(camera.getRotation());
+
+        glUniformMatrix4fv(mvpLocation, false, mvp.get(BufferUtils.createFloatBuffer(16)));
+        glUniform1i(texSlotLocation, 0);
 
         glBindVertexArray(modelIdVaoObject.get(model.getId()));
         //glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, indexBuffer);
