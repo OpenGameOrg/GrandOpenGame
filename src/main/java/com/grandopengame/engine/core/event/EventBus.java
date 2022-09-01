@@ -1,5 +1,6 @@
 package com.grandopengame.engine.core.event;
 
+import lombok.extern.java.Log;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.ArrayList;
@@ -11,31 +12,31 @@ import java.util.function.Consumer;
 /**
  * Connect event producers and consumers
  */
-@Log4j2
+@Log
 public enum EventBus {
     INSTANCE;
 
-    private Map<Integer, List<Consumer<Object[]>>> eventListeners;
+    private final Map<EventType, List<Consumer<EventData>>> eventListeners;
 
     EventBus() {
         eventListeners = new HashMap<>();
     }
 
-    public void subscribeToEvent(int eventCode, Consumer<Object[]> consumer) {
-        log.info("Subscribed to " + eventCode);
+    public static void subscribeToEvent(EventType eventType, Consumer<EventData> consumer) {
+        log.info("Subscribed to " + eventType);
 
-        if (!eventListeners.containsKey(eventCode)) {
-            eventListeners.put(eventCode, new ArrayList<>());
+        if (!INSTANCE.eventListeners.containsKey(eventType)) {
+            INSTANCE.eventListeners.put(eventType, new ArrayList<>());
         }
 
-        eventListeners.get(eventCode).add(consumer);
+        INSTANCE.eventListeners.get(eventType).add(consumer);
     }
 
-    public void broadcastEvent(int eventCode, Object[] data) {
-        log.debug("Event broadcast " + eventCode);
+    public static void broadcastEvent(EventType eventType, EventData data) {
+        log.warning("Event broadcast " + eventType);
 
-        if (!eventListeners.containsKey(eventCode)) return;
+        if (!INSTANCE.eventListeners.containsKey(eventType)) return;
 
-        eventListeners.get(eventCode).forEach((consumer) -> consumer.accept(data));
+        INSTANCE.eventListeners.get(eventType).forEach((consumer) -> consumer.accept(data));
     }
 }

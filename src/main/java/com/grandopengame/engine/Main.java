@@ -7,6 +7,7 @@ import com.grandopengame.engine.core.objects.SceneObject;
 import com.grandopengame.engine.core.render.OpenGlRenderer;
 import com.grandopengame.engine.core.render.Scene;
 import lombok.extern.java.Log;
+import org.joml.Random;
 import org.joml.Vector3f;
 
 import java.io.IOException;
@@ -19,11 +20,15 @@ public class Main {
         var startTimeMillis = System.currentTimeMillis();
         var scene = new Scene();
         ClassLoader classloader = Thread.currentThread().getContextClassLoader();
-        var modelStream = classloader.getResourceAsStream("models/cube.obj");
+        var modelStream = classloader.getResourceAsStream("models/251k_triangles.obj");
         OpenGlRenderer renderer = OpenGlRenderer.getInstance();
         var model = ModelReaderFactory.getReader("obj").read(modelStream);
-        for (int i = 0; i < 1; i++) {
-            var object = new SceneObject(model, new Vector3f(), new Vector3f(), new Vector3f(0.5f, 0.5f, 0.5f));
+        for (int i = 0; i < 10; i++) {
+            var randX = new Random().nextFloat() * 15;
+            var randY = new Random().nextFloat() * 15;
+            var randZ = new Random().nextFloat() * 15 - 25;
+
+            var object = new SceneObject(model, new Vector3f(randX, randY, randZ), new Vector3f(), new Vector3f(0.5f, 0.5f, 0.5f));
             scene.addObject(object);
         }
 

@@ -22,7 +22,7 @@ public class ObjModelReader implements ModelReader {
         var tempUVs = new ArrayList<Vector2f>();
         Vector2f[] uvs = null;
         var tempNormals = new ArrayList<Vector3f>();
-        var indices = new ArrayList<Short>();
+        var indices = new ArrayList<Integer>();
 
         while (scanner.hasNextLine()) {
             var line = scanner.nextLine();
@@ -49,10 +49,10 @@ public class ObjModelReader implements ModelReader {
                     if (uvs == null) {
                         uvs = new Vector2f[tempUVs.size()];
                     }
-                    var faceVerts = new short[] {
-                            Short.parseShort(components[1].split("/")[0]),
-                            Short.parseShort(components[2].split("/")[0]),
-                            Short.parseShort(components[3].split("/")[0]),
+                    var faceVerts = new int[] {
+                            Integer.parseInt(components[1].split("/")[0]),
+                            Integer.parseInt(components[2].split("/")[0]),
+                            Integer.parseInt(components[3].split("/")[0]),
                     };
                     var faceTexture = new int[] {
                             Integer.parseInt(components[1].split("/")[1]),
@@ -64,9 +64,9 @@ public class ObjModelReader implements ModelReader {
                             Integer.parseInt(components[2].split("/")[2]),
                             Integer.parseInt(components[3].split("/")[2]),
                     };
-                    indices.add((short) (faceVerts[0] - 1));
-                    indices.add((short) (faceVerts[1] - 1));
-                    indices.add((short) (faceVerts[2] - 1));
+                    indices.add(faceVerts[0] - 1);
+                    indices.add(faceVerts[1] - 1);
+                    indices.add(faceVerts[2] - 1);
 
                     uvs[faceVerts[0] - 1] = tempUVs.get(faceTexture[0] - 1);
                     uvs[faceVerts[1] - 1] = tempUVs.get(faceTexture[1] - 1);

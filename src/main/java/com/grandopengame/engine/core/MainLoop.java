@@ -1,13 +1,14 @@
 package com.grandopengame.engine.core;
 
+import com.grandopengame.engine.core.event.EventBus;
+import com.grandopengame.engine.core.event.EventType;
+import com.grandopengame.engine.core.event.KeyEventData;
+import com.grandopengame.engine.core.event.MousePositionEventData;
 import com.grandopengame.engine.core.graphics.model.Texture;
-import com.grandopengame.engine.core.render.Camera;
-import com.grandopengame.engine.core.render.OpenGlRenderer;
-import com.grandopengame.engine.core.render.Renderer;
-import com.grandopengame.engine.core.render.Scene;
+import com.grandopengame.engine.core.render.*;
 import lombok.Setter;
 import lombok.extern.java.Log;
-import org.joml.Matrix4f;
+import org.joml.Vector2f;
 import org.lwjgl.BufferUtils;
 import org.lwjgl.glfw.GLFWErrorCallback;
 import org.lwjgl.glfw.GLFWVidMode;
@@ -23,8 +24,6 @@ import static org.lwjgl.glfw.Callbacks.glfwFreeCallbacks;
 import static org.lwjgl.glfw.GLFW.*;
 import static org.lwjgl.opengl.GL11.*;
 import static org.lwjgl.opengl.GL20.*;
-import static org.lwjgl.opengl.GL21.glUniformMatrix4x2fv;
-import static org.lwjgl.opengl.GL30.glGenVertexArrays;
 import static org.lwjgl.system.MemoryStack.stackPush;
 import static org.lwjgl.system.MemoryUtil.NULL;
 
@@ -40,6 +39,7 @@ public class MainLoop {
 
     private long startTime;
     private int currentFrame;
+    private Vector2f viewportSize;
 
     public void run() throws IOException {
         log.info("Initialising main game loop");
@@ -78,7 +78,8 @@ public class MainLoop {
         glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
         // Create the window
-        windowHandle = glfwCreateWindow(600, 600, "GrandOpenGame", NULL, NULL);
+        windowHandle = glfwCreateWindow(1920, 1080, "GrandOpenGame", NULL, NULL);
+        viewportSize = new Vector2f(1920, 1080);
         if (windowHandle == NULL) {
             throw new RuntimeException("Failed to create the GLFW window");
         }
@@ -88,8 +89,17 @@ public class MainLoop {
             if (key == GLFW_KEY_ESCAPE && action == GLFW_RELEASE) {
                 glfwSetWindowShouldClose(window, true);
             }
-            if (key == GLFW_KEY_RIGHT && action == GLFW_PRESS) {
+            if (action == GLFW_PRESS) {
+                EventBus.broadcastEvent(EventType.KEY_PRESSED, new KeyEventData(key, true));
             }
+        });
+
+        glfwSetMouseButtonCallback(windowHandle, (window, button, action, mods) -> {
+            EventBus.broadcastEvent(EventType.MOUSE_BUTTON_EVENT, new KeyEventData(button, action == GLFW_PRESS));
+        });
+
+        glfwSetCursorPosCallback(windowHandle, (window, xpos, ypos) -> {
+            EventBus.broadcastEvent(EventType.MOUSE_MOVED, new MousePositionEventData(xpos, ypos));
         });
 
         // Get the thread stack and push a new frame
@@ -137,7 +147,8 @@ public class MainLoop {
         int program = createShaderProgram();
         renderer.initUniforms(program);
 
-        var camera = Camera.getDefaultCamera();
+        var camera = FreeFlyingCamera.createDefault(viewportSize);
+        scene.setCamera(camera);
 
         int someError = glGetError();
 
@@ -162,8 +173,9 @@ public class MainLoop {
 
                 r+= increment;
                 //scene.getObjects().get(0).position.x += 0.001f;
-                scene.getObjects().get(0).position.z = -5.810f;
-                scene.getObjects().get(0).rotation.y += 0.001f;
+                scene.getObjects().get(0).position.z = -2.810f;
+                scene.getObjects().get(0).rotation.y += 0.004f;
+                scene.getObjects().get(0).rotation.x -= 0.004f;
 
                 scene.getObjects().stream().forEach((sceneObject) -> renderer.render(sceneObject, camera));
             }

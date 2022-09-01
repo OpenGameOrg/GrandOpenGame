@@ -3,6 +3,7 @@ package com.grandopengame.engine.core.render;
 import com.grandopengame.engine.core.graphics.model.Model;
 import com.grandopengame.engine.core.objects.SceneObject;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -10,9 +11,11 @@ import java.util.List;
 /**
  * Representation of what should be rendered
  */
+@Getter
 public class Scene {
-    @Getter
     private List<SceneObject> objects = new ArrayList<>();
+    @Setter
+    private Camera camera;
 
     public void addObject(SceneObject object) {
         objects.add(object);

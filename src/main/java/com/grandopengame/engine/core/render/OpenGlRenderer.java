@@ -48,7 +48,7 @@ public class OpenGlRenderer implements Renderer {
 
     @Override
     public void loadModel(Model model) {
-        var indexBufferData = BufferUtils.createShortBuffer(model.getIndices().size());
+        var indexBufferData = BufferUtils.createIntBuffer(model.getIndices().size());
 
         model.getIndices().forEach(indexBufferData::put);
 
@@ -123,7 +123,7 @@ public class OpenGlRenderer implements Renderer {
     public void render(SceneObject object, Camera camera) {
         var model = object.getModel();
         var mvp = new Matrix4f();
-        mvp.perspective(1.0f, 1f, 0.01f, 200.0f)
+        mvp.perspective(1.0f, (float)(1920.0/1080.0), 0.01f, 200.0f)
                 .translate(object.position.x, object.position.y, object.position.z)
                 .rotateXYZ(object.rotation).translate(camera.getPosition()).rotateXYZ(camera.getRotation());
 
