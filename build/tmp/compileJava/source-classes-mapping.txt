@@ -1,2 +1,0 @@
-com/mygame/Main.java
- com.mygame.Main
