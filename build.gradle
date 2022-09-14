@@ -10,10 +10,12 @@ mainClassName = "com.mygame.Main"
 
 repositories {
     mavenCentral()
+    jcenter()
+    maven { url 'https://jitpack.io' }
 }
 
 project.ext {
-  jmeVer = '3.4.1-stable'
+  jmeVer = '3.5.2-stable'
 }
 
 project(":assets") {
@@ -28,27 +30,29 @@ project(":assets") {
             }
         }
     }
-
-    java {
-        toolchain {
-            languageVersion = JavaLanguageVersion.of(11)
-        }
-    }
-}
-
-java {
-    toolchain {
-        languageVersion = JavaLanguageVersion.of(11)
-    }
 }
 
 dependencies {
 
+  // Core JME
   implementation "org.jmonkeyengine:jme3-core:$jmeVer"
   implementation "org.jmonkeyengine:jme3-desktop:$jmeVer"
-  implementation "org.jmonkeyengine:jme3-lwjgl:$jmeVer"
-  implementation project("assets")
+  implementation "org.jmonkeyengine:jme3-lwjgl3:$jmeVer"
 
+  // Suppress errors / warnings building in SDK
+  implementation "org.jmonkeyengine:jme3-jogg:$jmeVer"
+  implementation "org.jmonkeyengine:jme3-plugins:$jmeVer"
+  
+  // GUI Library
+  implementation "org.jmonkeyengine:jme3-niftygui:$jmeVer"
+  
+  // Physics Library
+  implementation "org.jmonkeyengine:jme3-jbullet:$jmeVer"
+
+  // Additional Libraries
+
+  // Assets sub-project
+  runtimeOnly project(':assets')
 }
 
 jar {
@@ -56,4 +60,3 @@ jar {
         attributes 'Main-Class': "$mainClassName"
     }
 }
-
