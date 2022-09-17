@@ -50,7 +50,9 @@ dependencies {
   implementation "org.jmonkeyengine:jme3-jbullet:$jmeVer"
 
   // Additional Libraries
-
+  implementation "org.jmonkeyengine:jme3-testdata:$jmeVer"
+  implementation 'com.github.stephengold:SkyControl:1.0.3'
+  
   // Assets sub-project
   runtimeOnly project(':assets')
 }

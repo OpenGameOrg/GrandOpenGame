@@ -10,14 +10,19 @@ import com.jme3.input.ChaseCamera;
 import com.jme3.input.KeyInput;
 import com.jme3.input.controls.ActionListener;
 import com.jme3.input.controls.KeyTrigger;
+import com.jme3.light.AmbientLight;
 import com.jme3.light.DirectionalLight;
-import com.jme3.material.Material;
 import com.jme3.math.ColorRGBA;
 import com.jme3.math.Vector3f;
 import com.jme3.renderer.Camera;
 import com.jme3.renderer.RenderManager;
-import com.jme3.scene.Geometry;
-import com.jme3.scene.shape.Box;
+import com.jme3.renderer.ViewPort;
+import com.jme3.renderer.queue.RenderQueue;
+import com.jme3.shadow.DirectionalLightShadowRenderer;
+import com.jme3.shadow.EdgeFilteringMode;
+import jme3utilities.sky.SkyControl;
+import jme3utilities.sky.StarsOption;
+import jme3utilities.sky.SunAndStars;
 
 /**
  * This is the Main Class of your Game. You should only do initialization here.
@@ -43,6 +48,8 @@ public class Main extends SimpleApplication {
 
     @Override
     public void simpleInitApp() {
+        camera = getCamera();
+
         var scene = assetManager.loadModel("Scenes/yivysky-osm.j3o");
         
         var bulletAppState = new BulletAppState();
@@ -50,7 +57,8 @@ public class Main extends SimpleApplication {
         stateManager.attach(bulletAppState);
                 
         setupLight();
-
+        setupSky();
+        
         rootNode.attachChild(scene);
         var floor = rootNode.getChild("Floor");
         var floorControl = new RigidBodyControl(0);
@@ -68,7 +76,6 @@ public class Main extends SimpleApplication {
         bulletAppState.getPhysicsSpace().add(playerControl);
         
         this.getFlyByCamera().setEnabled(false);
-        camera = getCamera();
         var chaseCamera = new ChaseCamera(camera, player, inputManager);
         
         addInputMappings();
@@ -80,6 +87,41 @@ public class Main extends SimpleApplication {
         sun.setColor(ColorRGBA.White);
         sun.setDirection(new Vector3f(-.5f,-.5f,-.5f).normalizeLocal());
         rootNode.addLight(sun);
+        rootNode.addLight(new AmbientLight());
+        
+        rootNode.setShadowMode(RenderQueue.ShadowMode.CastAndReceive);
+        var shadowRenderer
+                = new DirectionalLightShadowRenderer(assetManager, 4_096, 4);
+        ViewPort viewPort = getViewPort();
+        viewPort.addProcessor(shadowRenderer);
+        shadowRenderer.setEdgeFilteringMode(EdgeFilteringMode.PCFPOISSON);
+        shadowRenderer.setLight(sun);
+        shadowRenderer.setShadowIntensity(0.3f);
+        shadowRenderer.setShadowZExtend(256f);
+        shadowRenderer.setShadowZFadeLength(128f);
+        
+    }
+    
+    private void setupSky() {
+//        var sky = SkyFactory.createSky(assetManager,
+//                "Textures/Sky/Bright/BrightSky.dds",
+//                SkyFactory.EnvMapType.CubeMap);
+//        
+          var sky = new SkyControl(assetManager, camera,
+                  0.5f, StarsOption.TopDome, true);
+                             
+          rootNode.addControl(sky);
+         
+          sky.setSolarDiameter(0.1f);
+          sky.setCloudsRate(0.7f);
+          sky.setCloudiness(0.8f);
+          sky.setCloudsYOffset(0.4f);
+          
+          SunAndStars sunAndStars = sky.getSunAndStars();
+          sunAndStars.setHour(16f); // 4 p.m.
+          sunAndStars.setObserverLatitude(0.63f); // 36 degrees north
+          
+          sky.setEnabled(true);
     }
 
     private void addInputMappings() {
